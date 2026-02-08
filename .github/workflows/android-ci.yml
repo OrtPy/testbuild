@@ -1,0 +1,47 @@
+name: Android CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v3
+
+      - name: Build Debug APK
+        working-directory: app
+        run: |
+          chmod +x ./gradlew
+          # Some caches (or line-ending conversions) can drop exec bits inside the Gradle distribution.
+          # Use a workspace-local GRADLE_USER_HOME and force a clean wrapper dist to avoid EACCES.
+          export GRADLE_USER_HOME="$GITHUB_WORKSPACE/.gradle"
+          rm -rf "$GRADLE_USER_HOME/wrapper/dists" || true
+          ./gradlew --no-daemon :app:assembleDebug || {
+            echo "Gradle wrapper failed; fixing exec bits and retrying..."
+            find "$GRADLE_USER_HOME/wrapper/dists" -type f -path "*/bin/gradle" -exec chmod +x {} \; || true
+            find "$GRADLE_USER_HOME/wrapper/dists" -type f -path "*/bin/gradle*" -exec chmod +x {} \; || true
+            ./gradlew --no-daemon :app:assembleDebug
+          }
+
+      - name: Collect artifacts
+        run: |
+          chmod +x scripts/collect_artifacts.sh
+          scripts/collect_artifacts.sh
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist

@@ -1,0 +1,14 @@
+# Gradle
+.gradle/
+**/build/
+
+# Android Studio
+*.iml
+.idea/
+
+# dist (CI artifact)
+dist/
+
+# local logs
+*.jsonl
+*.log
