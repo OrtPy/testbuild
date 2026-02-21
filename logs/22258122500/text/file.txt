@@ -1,0 +1,1 @@
+logs/22258122500/out/liblwplocal.so: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /system/bin/linker, stripped

@@ -1,0 +1,9 @@
+patched libs/armeabi-v7a/liblwplocal_unidbgfix.so
+normalized PT_LOAD p_align to 0x1000: 2 entries
+patched GNU_RELRO: 1 entries
+[FIX] RW PT_LOAD page-align: shift=0xc54
+      offset 0x17c54->0x17000
+      vaddr  0x17c54->0x17000
+      filesz 0x3fc->0x1050
+      memsz  0xc61->0x18b5
+[FIX] PT_LOAD(RX) page-overlap: rx_page_end=0x18000 > rw_page_start=0x17000 -> filesz=0x17000 memsz=0x17000

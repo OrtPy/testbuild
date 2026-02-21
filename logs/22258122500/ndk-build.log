@@ -1,0 +1,37 @@
+Android NDK: WARNING:jni/Android.mk:lwplocal: non-system libraries in linker flags: -lgcc -Wl,-soname,liblwplocal.so    
+Android NDK:     This is likely to result in incorrect builds. Try using LOCAL_STATIC_LIBRARIES    
+Android NDK:     or LOCAL_SHARED_LIBRARIES instead to list the library dependencies of the    
+Android NDK:     current module    
+[armeabi-v7a] Compile++ thumb: lwplocal <= cpp_shims_v7a.cpp
+[armeabi-v7a] Compile thumb  : lwplocal <= bss_pad_v7a.c
+[armeabi-v7a] Compile thumb  : lwplocal <= init_array_pad_v7a.c
+[armeabi-v7a] Compile thumb  : lwplocal <= compat_exports_armeabi_v7a.c
+[armeabi-v7a] Compile thumb  : lwplocal <= gcc_comment_ref.S
+[armeabi-v7a] Compile thumb  : lwplocal <= text_pad_v7a.S
+[armeabi-v7a] Compile thumb  : lwplocal <= data_ef2pad_v7a.c
+[armeabi-v7a] Compile thumb  : lwplocal <= bss_ef2pad_v7a.c
+[armeabi-v7a] Prebuilt       : libgnustl_shared.so <= <NDK>/sources/cxx-stl/gnu-libstdc++/4.8/libs/armeabi-v7a/thumb/
+[armeabi-v7a] Compile++ thumb: lwplocal <= imports_anchor_v7a.cpp
+[armeabi-v7a] Compile thumb  : lwplocal <= libgcc_anchor_v7a.c
+[armeabi-v7a] Compile++ thumb: lwplocal <= reldyn_anchor_v7a.cpp
+[armeabi-v7a] Compile thumb  : lwplocal <= timeutil.c
+[armeabi-v7a] Compile thumb  : lwplocal <= decomp_compat.c
+[armeabi-v7a] Compile thumb  : lwplocal <= curve.c
+[armeabi-v7a] Compile thumb  : lwplocal <= curveclient.c
+[armeabi-v7a] Compile thumb  : lwplocal <= renderer.c
+[armeabi-v7a] Compile thumb  : lwplocal <= gles_stub.c
+[armeabi-v7a] Compile thumb  : lwplocal <= buffer.c
+[armeabi-v7a] Compile thumb  : lwplocal <= program.c
+[armeabi-v7a] Compile thumb  : lwplocal <= texture.c
+[armeabi-v7a] Compile thumb  : lwplocal <= shaderfile.c
+[armeabi-v7a] Compile thumb  : lwplocal <= meshgen.c
+[armeabi-v7a] Compile thumb  : lwplocal <= rendererdata.c
+[armeabi-v7a] Compile thumb  : lwplocal <= theme.c
+[armeabi-v7a] Compile thumb  : lwplocal <= theme_tree.c
+[armeabi-v7a] Compile thumb  : lwplocal <= platform.c
+[armeabi-v7a] Compile thumb  : lwplocal <= curve_renderer_jni.c
+[armeabi-v7a] Compile++ thumb: lodepng_cpp <= lodepng.cpp
+[armeabi-v7a] Install        : libgnustl_shared.so => libs/armeabi-v7a/libgnustl_shared.so
+[armeabi-v7a] StaticLibrary  : liblodepng_cpp.a
+[armeabi-v7a] SharedLibrary  : liblwplocal.so
+[armeabi-v7a] Install        : liblwplocal.so => libs/armeabi-v7a/liblwplocal.so

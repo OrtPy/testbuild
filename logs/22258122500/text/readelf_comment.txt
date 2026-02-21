@@ -1,0 +1,7 @@
+
+String dump of section '.comment':
+  [     1]  GCC: (GNU) 4.6 20120106 (prerelease)
+  [    26]  GCC: (GNU) 4.8
+  [    36]  GCC: (GNU) 4.6 20120106 (prerelease)
+  [    5b]  GCC: (GNU) 4.8
+

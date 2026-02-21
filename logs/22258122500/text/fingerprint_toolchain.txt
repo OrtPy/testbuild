@@ -1,0 +1,13 @@
+NDK_DIR=/home/runner/ndk/android-ndk-r10c
+Using built-in specs.
+COLLECT_GCC=/home/runner/ndk/android-ndk-r10c/toolchains/arm-linux-androideabi-4.8/prebuilt/linux-x86_64/bin/arm-linux-androideabi-gcc
+COLLECT_LTO_WRAPPER=/home/runner/ndk/android-ndk-r10c/toolchains/arm-linux-androideabi-4.8/prebuilt/linux-x86_64/bin/../libexec/gcc/arm-linux-androideabi/4.8/lto-wrapper
+Target: arm-linux-androideabi
+Configured with: /s/ndk-toolchain/src/build/../gcc/gcc-4.8/configure --prefix=/tmp/ndk-andrewhsieh/build/toolchain/prefix --target=arm-linux-androideabi --host=x86_64-linux-gnu --build=x86_64-linux-gnu --with-gnu-as --with-gnu-ld --enable-languages=c,c++ --with-gmp=/tmp/ndk-andrewhsieh/build/toolchain/temp-install --with-mpfr=/tmp/ndk-andrewhsieh/build/toolchain/temp-install --with-mpc=/tmp/ndk-andrewhsieh/build/toolchain/temp-install --with-cloog=/tmp/ndk-andrewhsieh/build/toolchain/temp-install --with-isl=/tmp/ndk-andrewhsieh/build/toolchain/temp-install --with-ppl=/tmp/ndk-andrewhsieh/build/toolchain/temp-install --disable-ppl-version-check --disable-cloog-version-check --disable-isl-version-check --enable-cloog-backend=isl --with-host-libstdcxx='-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm' --disable-libssp --enable-threads --disable-nls --disable-libmudflap --disable-libgomp --disable-libstdc__-v3 --disable-sjlj-exceptions --disable-shared --disable-tls --disable-libitm --with-float=soft --with-fpu=vfp --with-arch=armv5te --enable-target-optspace --enable-initfini-array --disable-nls --prefix=/tmp/ndk-andrewhsieh/build/toolchain/prefix --with-sysroot=/tmp/ndk-andrewhsieh/build/toolchain/prefix/sysroot --with-binutils-version=2.24 --with-mpfr-version=3.1.1 --with-mpc-version=1.0.1 --with-gmp-version=5.0.5 --with-gcc-version=4.8 --with-gdb-version=7.6 --with-python=/usr/local/google/home/andrewhsieh/mydroid/ndk/prebuilt/linux-x86_64/bin/python-config.sh --with-gxx-include-dir=/tmp/ndk-andrewhsieh/build/toolchain/prefix/include/c++/4.8 --with-bugurl=http://source.android.com/source/report-bugs.html --disable-bootstrap --disable-libquadmath --enable-plugins --enable-libgomp --disable-libsanitizer --enable-gold --enable-graphite=yes --with-cloog-version=0.18.0 --with-isl-version=0.11.1 --enable-eh-frame-hdr-for-static --with-arch=armv5te --program-transform-name='s&^&arm-linux-androideabi-&' --enable-gold=default
+Thread model: posix
+gcc version 4.8 (GCC) 
+GNU gold (GNU Binutils 2.24) 1.11
+Copyright 2013 Free Software Foundation, Inc.
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or (at your option) a later version.
+This program has absolutely no warranty.
