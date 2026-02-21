@@ -1,0 +1,87 @@
+/*
+ * relrohdr placeholder linker script (ARM EABI, gold 1.11 compatible).
+ *
+ * Purpose:
+ *   - Reserve a GNU_RELRO program header so PHDR count becomes 8 and SIZEOF_HEADERS tends to match stock (0x134).
+ *   - Avoid explicit :relro mapping (gold 1.11 set_offset internal error trigger).
+ *   - Intended for diagnostics and post-link PHDR patching.
+ */
+
+PHDRS
+{
+  headers PT_PHDR      PHDRS FLAGS(4);
+  interp  PT_INTERP    FLAGS(4);
+  text    PT_LOAD      FILEHDR PHDRS FLAGS(5); /* R+X */
+  data    PT_LOAD      FLAGS(6);               /* R+W */
+  dynamic PT_DYNAMIC   FLAGS(6);
+  stack   PT_GNU_STACK FLAGS(6);
+  /* PT_ARM_EXIDX == 0x70000001 */
+  exidx   0x70000001   FLAGS(4);
+  /* PT_GNU_RELRO == 0x6474e552 (placeholder: no section mapping) */
+  relro   0x6474e552   FLAGS(6);
+}
+
+SECTIONS
+{
+  /DISCARD/ : { *(.note.GNU-stack) }
+
+  . = SIZEOF_HEADERS;
+
+  .interp     : { *(.interp) }                               :text :interp
+  .dynsym     : { *(.dynsym) }                               :text
+  .dynstr     : { *(.dynstr) }                               :text
+  .hash       : { *(.hash) }                                 :text
+  .rel.dyn    : { *(.rel.dyn) *(.rel.dyn.*) }                :text
+  .rel.plt    : { *(.rel.plt) *(.rel.plt.*) }                :text
+  .plt        : { *(.plt) *(.plt.*) }                        :text
+  .text       : { *(.text) *(.text.*) }                      :text
+  .ARM.extab  : { *(.ARM.extab* .gnu.linkonce.armextab.*) }  :text
+  .ARM.exidx  : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) }  :text :exidx
+
+  PROVIDE_HIDDEN(__exidx_start = ADDR(.ARM.exidx));
+  PROVIDE_HIDDEN(__exidx_end = ADDR(.ARM.exidx) + SIZEOF(.ARM.exidx));
+
+  .rodata     : { *(.rodata) *(.rodata.*) }                  :text
+
+  __ef2_ro_end = .;
+  /*
+   * Unidbg-friendly RW start.
+   *
+   * Some emulators/loaders crash if the RW PT_LOAD shares a page with the RX PT_LOAD
+   * while code/rodata is still oversized. Push the RW start by +0x1000.
+   *
+   * Reference start: 0x00017c28
+   * Unidbg start    : 0x00018c28
+   */
+  . = MAX(., 0x00018c28);
+  __ef2_data_start = .;
+
+  .fini_array  : { *(.fini_array*) }                         :data
+  .init_array  : { *(.init_array*) }                         :data
+  .data.rel.ro : { *(.data.rel.ro.local*) *(.data.rel.ro*) }  :data
+  .dynamic     : { *(.dynamic) }                             :data :dynamic
+  .got         : { *(.got) KEEP(*(.got.ef2pad)) *(.got.*) }  :data
+
+  . = MAX(., 0x00018000);
+  .data : { *(.data) KEEP(*(.data.ef2pad)) *(.data.*) }      :data
+
+  _edata = ABSOLUTE(.);
+
+  .bss (NOLOAD) :
+  {
+    *(.bss) *(.bss.*) *(COMMON)
+    KEEP(*(.bss.ef2pad))
+  } :data
+
+  _end = ABSOLUTE(.);
+
+  .comment :
+  {
+    KEEP(*(.comment.ef2))
+    *(.comment)
+    *(.comment.*)
+  }
+
+  .note.gnu.gold-version : { KEEP(*(.note.gnu.gold-version)) }
+  .ARM.attributes : { KEEP(*(.ARM.attributes)) }
+}

@@ -1,0 +1,118 @@
+/*
+ * Gold-compatible linker script for ARM EABI shared objects.
+ *
+ * Goal (this project): match the original liblwplocal.so PHDR / segment layout.
+ *
+ * Notes:
+ *  - Keep compatibility with gold 1.11 (NDK r10c).
+ *  - gold 1.11 does NOT accept the keyword PT_ARM_EXIDX, so we use the
+ *    numeric value 0x70000001 for the EXIDX program header type.
+ */
+
+PHDRS
+{
+  /* Original: PHDR, INTERP, LOAD, LOAD, DYNAMIC, GNU_STACK, EXIDX, GNU_RELRO */
+  headers PT_PHDR    PHDRS FLAGS(4);
+  interp  PT_INTERP  FLAGS(4);
+  /* gold 1.11 (NDK r10c) does not support PHDRS-level ALIGN(); keep defaults. */
+  text    PT_LOAD    FILEHDR PHDRS FLAGS(5); /* R + X */
+  data    PT_LOAD    FLAGS(6);               /* R + W */
+  dynamic PT_DYNAMIC FLAGS(6);
+  stack   PT_GNU_STACK FLAGS(6);
+  /* PT_ARM_EXIDX == 0x70000001 */
+  exidx   0x70000001 FLAGS(4);
+  /* PT_GNU_RELRO is intentionally NOT declared here.
+   * gold 1.11 (NDK r10c) is prone to internal "set_offset" aborts when an explicit
+   * GNU_RELRO PHDR and :relro assignments are used with our fixed-layout script.
+   * We keep -z relro/-z now and let the linker decide GNU_RELRO automatically.
+   */
+}
+
+SECTIONS
+{
+  /*
+   * Discard non-deterministic / toolchain-provided metadata early.
+   * gold 1.11 may error out if it tries to create an orphan output section
+   * named ".comment" while the script later defines its own deterministic
+   * ".comment". By discarding generic .comment* upfront we avoid that path.
+   */
+  /DISCARD/ : {
+    *(.note.GNU-stack)
+  }
+
+  /* Text/RO PT_LOAD */
+  . = SIZEOF_HEADERS;
+
+  /* Map .interp to both PT_INTERP and the first PT_LOAD (like original). */
+  .interp     : { *(.interp) }                               :text :interp
+  .dynsym     : { *(.dynsym) }                               :text
+  .dynstr     : { *(.dynstr) }                               :text
+  .hash       : { *(.hash) }                                 :text
+  .rel.dyn    : { *(.rel.dyn) *(.rel.dyn.*) }                :text
+  .rel.plt    : { *(.rel.plt) *(.rel.plt.*) }                :text
+  .plt        : { *(.plt) *(.plt.*) }                        :text
+  .text       : { *(.text) *(.text.*) }                      :text
+  .ARM.extab  : { *(.ARM.extab* .gnu.linkonce.armextab.*) }  :text
+  /* .ARM.exidx is present in both the text LOAD and EXIDX PHDR in the original */
+  .ARM.exidx  : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) }  :text :exidx
+
+  /* Provide hidden EXIDX boundary symbols for ld.bfd + libgcc unwind (does not export in dynsym). */
+  PROVIDE_HIDDEN(__exidx_start = ADDR(.ARM.exidx));
+  PROVIDE_HIDDEN(__exidx_end = ADDR(.ARM.exidx) + SIZEOF(.ARM.exidx));
+
+  .rodata     : { *(.rodata) *(.rodata.*) }                  :text
+
+  /*
+   * Data PT_LOAD.
+   *
+   * NOTE (progress mode): while .text/.rodata is still larger than the
+   * reference window, forcing ". = 0x17c28" can move the location counter
+   * backward and ld.gold (NDK r10c) aborts.
+   *
+   * So we clamp to the target address:
+   *   - if current '.' <= 0x17c28 : keep fixed start (reference layout)
+   *   - if current '.'  > 0x17c28 : start right after RO end (temporary)
+   */
+  __ef2_ro_end = .;
+  . = MAX(., 0x00017c28);
+  __ef2_data_start = .;
+
+  /* RELRO-covered region (keep section order; do not force :relro in gold 1.11). */
+  .fini_array  : { *(.fini_array*) }                         :data
+  .init_array  : { *(.init_array*) }                         :data
+  .data.rel.ro : { *(.data.rel.ro.local*) *(.data.rel.ro*) }  :data
+  .dynamic     : { *(.dynamic) }                             :data :dynamic
+  .got         : { *(.got) KEEP(*(.got.ef2pad)) *(.got.*) }   :data
+
+  /* Start .data on next page (target is 0x18000; clamp to avoid backward moves). */
+  . = MAX(., 0x00018000);
+  .data : { *(.data) KEEP(*(.data.ef2pad)) *(.data.*) }       :data
+
+  /* Export exact boundary symbols as ABS (reference has Ndx=ABS) */
+  _edata = ABSOLUTE(.);
+
+  /* BSS: do NOT force '.' inside NOLOAD (gold 1.11 may crash). Use .bss.ef2pad instead. */
+  .bss (NOLOAD) :
+  {
+    *(.bss) *(.bss.*) *(COMMON)
+    KEEP(*(.bss.ef2pad))
+  } :data
+
+  /* Export end-of-image symbol as ABS (reference has Ndx=ABS) */
+  _end = ABSOLUTE(.);
+
+  /*
+   * Non-loadable metadata sections.
+   * Keep deterministic .comment payload only (match reference).
+   * Place at VMA 0 like reference.
+   */
+  .comment :
+  {
+    KEEP(*(.comment.ef2))
+    *(.comment)
+    *(.comment.*)
+  }
+
+  .note.gnu.gold-version : { KEEP(*(.note.gnu.gold-version)) }
+  .ARM.attributes : { KEEP(*(.ARM.attributes)) }
+}

@@ -1,0 +1,104 @@
+name: build-ndk-r10c
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full python3 file make binutils curl ca-certificates zip git
+
+      - name: Fetch Android NDK r10c
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/ndk"
+          curl -L --retry 3 --retry-delay 2 -o /tmp/android-ndk-r10c-linux-x86_64.bin             http://dl.google.com/android/ndk/android-ndk-r10c-linux-x86_64.bin
+
+          # NDK r10c .bin is a 7z archive with many symlinks.
+          # Newer 7-Zip may reject some symlinks and exit with code 2.
+          # We ignore it and then recreate expected symlinks.
+          7z x /tmp/android-ndk-r10c-linux-x86_64.bin -o"$HOME/ndk" >/dev/null || true
+
+          NDK_DIR="$(find "$HOME/ndk" -maxdepth 2 -type d -name 'android-ndk-r10c*' | head -n 1)"
+          echo "NDK_DIR=$NDK_DIR" >> $GITHUB_ENV
+          test -n "$NDK_DIR"
+
+          bash tools/fix_ndk_r10c_symlinks.sh "$NDK_DIR"
+
+          test -x "$NDK_DIR/ndk-build"
+          test -x "$NDK_DIR/toolchains/arm-linux-androideabi-4.8/prebuilt/linux-x86_64/bin/arm-linux-androideabi-gcc"
+
+      - name: Build (matchrelrohdr)
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+          RUN_DIR="logs/${GITHUB_RUN_ID}"
+          mkdir -p "$RUN_DIR"
+
+          # Build log
+          "$NDK_DIR/ndk-build" -j2             NDK_PROJECT_PATH=.             APP_BUILD_SCRIPT=jni/Android.mk             NDK_APPLICATION_MK=jni/Application.mk             EF2_LINK_LAYOUT=matchrelrohdr             EF2_BSS_PAD_BYTES=0x801             2>&1 | tee "$RUN_DIR/ndk-build.log"
+
+      - name: Prepare unidbg-friendly copies (DT_NEEDED order + PHDR fix)
+        run: |
+          set -euxo pipefail
+          RUN_DIR="logs/${GITHUB_RUN_ID}"
+          mkdir -p "$RUN_DIR/text"
+
+          ABI="armeabi-v7a"
+
+          STRIP_RAW="libs/$ABI/liblwplocal.so"
+          UNSTRIP_RAW="obj/local/$ABI/liblwplocal.so"
+
+          STRIP_FIX="libs/$ABI/liblwplocal_unidbgfix.so"
+          UNSTRIP_FIX="obj/local/$ABI/liblwplocal_unstripped_unidbgfix.so"
+
+          # Keep raw untouched for perfect-match work; create fixed copies for unidbg.
+          cp -av "$STRIP_RAW" "$STRIP_FIX"
+          cp -av "$UNSTRIP_RAW" "$UNSTRIP_FIX"
+
+          # Record raw PHDRs (may be broken; that's the point)
+          readelf -lW "$STRIP_RAW"   > "$RUN_DIR/text/phdr_raw_stripped.txt"   || true
+          readelf -lW "$UNSTRIP_RAW" > "$RUN_DIR/text/phdr_raw_unstripped.txt" || true
+
+          # 1) DT_NEEDED order fix (exact order matters for match)
+          python3 tools/fix_needed_order.py "$STRIP_FIX"
+          python3 tools/fix_needed_order.py "$UNSTRIP_FIX"
+
+          # 2) PHDR fix for unidbg (normalize p_align + restore GNU_RELRO + fix PT_LOAD overlap if any)
+          python3 tools/patch_gnu_relro_phdr.py "$STRIP_FIX" --auto | tee "$RUN_DIR/text/phdr_patch_stripped.txt"
+          python3 tools/patch_gnu_relro_phdr.py "$UNSTRIP_FIX" --auto | tee "$RUN_DIR/text/phdr_patch_unstripped.txt"
+
+          # Record fixed PHDRs
+          readelf -lW "$STRIP_FIX"   > "$RUN_DIR/text/phdr_fix_stripped.txt"   || true
+          readelf -lW "$UNSTRIP_FIX" > "$RUN_DIR/text/phdr_fix_unstripped.txt" || true
+
+      - name: Collect logs + outputs
+        run: |
+          set -euxo pipefail
+          RUN_DIR="logs/${GITHUB_RUN_ID}"
+          bash tools/collect_run_logs.sh "$RUN_DIR" "$NDK_DIR" "armeabi-v7a"
+
+      - name: Commit logs into repo
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          set -euxo pipefail
+          RUN_DIR="logs/${GITHUB_RUN_ID}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add "$RUN_DIR" logs/.gitkeep || true
+          git commit -m "Add logs for run ${GITHUB_RUN_ID}" || exit 0
+          git push

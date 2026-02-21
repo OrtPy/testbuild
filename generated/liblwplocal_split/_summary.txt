@@ -1,0 +1,17 @@
+input: /mnt/data/ef2_cified_v2/ref/native/liblwplocal.so.c
+total functions (by markers): 336
+
+globals              190
+subroutines          82
+lodepng              17
+jni                  10
+Curve                9
+program              6
+renderer             6
+buffer               4
+texture              4
+framebuffer          3
+varray               2
+bufferconfig         1
+fsshader             1
+uniform              1
